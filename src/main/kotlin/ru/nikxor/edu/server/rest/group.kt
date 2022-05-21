@@ -1,18 +1,17 @@
 package ru.nikxor.edu.server.rest
 
-import com.typesafe.config.ConfigException
 import io.ktor.application.*
 import io.ktor.http.*
 import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
-import io.ktor.util.Identity.decode
-import ru.nikxor.edu.server.model.*
 import ru.nikxor.edu.server.model.Config.Companion.groupsPath
+import ru.nikxor.edu.server.model.Flow
+import ru.nikxor.edu.server.model.Group
+import ru.nikxor.edu.server.model.forString
 import ru.nikxor.edu.server.repo.RepoItem
 import ru.nikxor.edu.server.repo.flowsRepo
 import ru.nikxor.edu.server.repo.groupsRepo
-import kotlin.text.get
 
 fun Route.group() =
     route(groupsPath) {
@@ -50,10 +49,10 @@ fun Route.group() =
                 status = HttpStatusCode.NotFound
             )
             val nameGroup = GroupItems.elem.name
-            var flowsInGroup:Set<String> = emptySet()
+            var flowsInGroup: Set<String> = emptySet()
 
             val allFlows = flowsRepo.findAll()
-            allFlows.forEach{ flow ->
+            allFlows.forEach { flow ->
                 flow.elem.participants.forEach { part ->
                     if (nameGroup == part) {
                         flowsInGroup = flowsInGroup + flow.elem.name
@@ -64,7 +63,7 @@ fun Route.group() =
         }
 
         //Потоки для группы для селекта
-        get("{groupId}/group/Select"){
+        get("{groupId}/group/Select") {
             val id = call.parameters["groupId"] ?: return@get call.respondText(
                 "Missing or malformed id",
                 status = HttpStatusCode.BadRequest
@@ -75,14 +74,14 @@ fun Route.group() =
             )
 
             val nameGroup = GroupItems.elem.name
-            var flowsForGroup:Set<String> = emptySet()
+            var flowsForGroup: Set<String> = emptySet()
 
             val allFlows = flowsRepo.findAll()
-            allFlows.forEach{ flow ->
-                    if (nameGroup !in flow.elem.participants) {
-                        if (flow.elem.type == "Lecture" ) {
-                            flowsForGroup = flowsForGroup + flow.elem.name
-                        }
+            allFlows.forEach { flow ->
+                if (nameGroup !in flow.elem.participants) {
+                    if (flow.elem.type == "Lecture") {
+                        flowsForGroup = flowsForGroup + flow.elem.name
+                    }
                 }
             }
             call.respond(flowsForGroup)
@@ -101,11 +100,11 @@ fun Route.group() =
             val nameGroup = GroupItem.elem.name
 
             val newPartClient = call.receive<forString>()
-            var neededFlow = RepoItem<Flow>(Flow("null","null", setOf("null")),"String", 123)
+            var neededFlow = RepoItem<Flow>(Flow("null", "null", setOf("null")), "String", 123)
             val allFlow = flowsRepo.findAll()
-            allFlow.forEach {
-                it -> if (it.elem.name == newPartClient.name) {
-                   neededFlow = it
+            allFlow.forEach { it ->
+                if (it.elem.name == newPartClient.name) {
+                    neededFlow = it
                 }
             }
             val oldNameFlow = neededFlow.elem.name
@@ -114,11 +113,13 @@ fun Route.group() =
 
             val newPart = oldPart + nameGroup
 
-            val flowWithNewPart = Flow(oldNameFlow,oldType,newPart)
+            val flowWithNewPart = Flow(oldNameFlow, oldType, newPart)
 
-            flowsRepo.update(neededFlow.uuid,flowWithNewPart)
-            call.respondText("Participants add correctly",
-                status = HttpStatusCode.Accepted)
+            flowsRepo.update(neededFlow.uuid, flowWithNewPart)
+            call.respondText(
+                "Participants add correctly",
+                status = HttpStatusCode.Accepted
+            )
         }
 
         //Удаление потока из группы
@@ -134,12 +135,12 @@ fun Route.group() =
             val nameGroup = GroupItem.elem.name
 
             val newPartClient = call.receive<forString>()
-            var neededFlow = RepoItem<Flow>(Flow("null","null", setOf("null")),"String", 123)
+            var neededFlow = RepoItem<Flow>(Flow("null", "null", setOf("null")), "String", 123)
             val allFlow = flowsRepo.findAll()
-            allFlow.forEach {
-                    it -> if (it.elem.name == newPartClient.name) {
-                neededFlow = it
-            }
+            allFlow.forEach { it ->
+                if (it.elem.name == newPartClient.name) {
+                    neededFlow = it
+                }
             }
             val oldNameFlow = neededFlow.elem.name
             val oldPart = neededFlow.elem.participants
@@ -147,11 +148,13 @@ fun Route.group() =
 
             val newPart = oldPart - nameGroup
 
-            val flowWithNewPart = Flow(oldNameFlow,oldType,newPart)
+            val flowWithNewPart = Flow(oldNameFlow, oldType, newPart)
 
-            flowsRepo.update(neededFlow.uuid,flowWithNewPart)
-            call.respondText("Participants add correctly",
-                status = HttpStatusCode.Accepted)
+            flowsRepo.update(neededFlow.uuid, flowWithNewPart)
+            call.respondText(
+                "Participants add correctly",
+                status = HttpStatusCode.Accepted
+            )
         }
 
 
@@ -165,9 +168,9 @@ fun Route.group() =
                 "Missing or malformed subgroup name",
                 status = HttpStatusCode.BadRequest
             )
-            var flowsInSubgroup:Set<String> = emptySet()
+            var flowsInSubgroup: Set<String> = emptySet()
             val allFlows = flowsRepo.findAll()
-            allFlows.forEach{ flow ->
+            allFlows.forEach { flow ->
                 flow.elem.participants.forEach { part ->
                     if (name == part) {
                         flowsInSubgroup = flowsInSubgroup + flow.elem.name
@@ -183,10 +186,10 @@ fun Route.group() =
                 "Missing or malformed subgroup name",
                 status = HttpStatusCode.BadRequest
             )
-            var flowsForSubgroup:Set<String> = emptySet()
+            var flowsForSubgroup: Set<String> = emptySet()
             val allFlows = flowsRepo.findAll()
             allFlows.forEach { flow ->
-                if (name  !in flow.elem.participants) {
+                if (name !in flow.elem.participants) {
                     if (flow.elem.type == "Practice") {
                         flowsForSubgroup = flowsForSubgroup + flow.elem.name
                     }
@@ -202,10 +205,10 @@ fun Route.group() =
                 status = HttpStatusCode.BadRequest
             )
             val newPartClient = call.receive<forString>()
-            var neededFlow = RepoItem<Flow>(Flow("null","null", setOf("null")),"String", 123)
+            var neededFlow = RepoItem<Flow>(Flow("null", "null", setOf("null")), "String", 123)
             val allFlow = flowsRepo.findAll()
-            allFlow.forEach {
-                    it -> if (it.elem.name == newPartClient.name) {
+            allFlow.forEach { it ->
+                if (it.elem.name == newPartClient.name) {
                     neededFlow = it
                 }
             }
@@ -221,8 +224,7 @@ fun Route.group() =
                     "Participants add correctly",
                     status = HttpStatusCode.Accepted
                 )
-            }
-            else {
+            } else {
                 call.respondText(
                     "Participants not added"
                 )
@@ -236,12 +238,12 @@ fun Route.group() =
                 status = HttpStatusCode.BadRequest
             )
             val newPartClient = call.receive<forString>()
-            var neededFlow = RepoItem<Flow>(Flow("null","null", setOf("null")),"String", 123)
+            var neededFlow = RepoItem<Flow>(Flow("null", "null", setOf("null")), "String", 123)
             val allFlow = flowsRepo.findAll()
-            allFlow.forEach {
-                    it -> if (it.elem.name == newPartClient.name) {
-                neededFlow = it
-            }
+            allFlow.forEach { it ->
+                if (it.elem.name == newPartClient.name) {
+                    neededFlow = it
+                }
             }
             val oldNameFlow = neededFlow.elem.name
             val oldPart = neededFlow.elem.participants
@@ -249,10 +251,12 @@ fun Route.group() =
 
             val newPart = oldPart - name
 
-            val flowWithNewPart = Flow(oldNameFlow,oldType,newPart)
-            flowsRepo.update(neededFlow.uuid,flowWithNewPart)
-            call.respondText("Participants add correctly",
-                status = HttpStatusCode.Accepted)
+            val flowWithNewPart = Flow(oldNameFlow, oldType, newPart)
+            flowsRepo.update(neededFlow.uuid, flowWithNewPart)
+            call.respondText(
+                "Participants add correctly",
+                status = HttpStatusCode.Accepted
+            )
         }
 
         //Добавлеие группы
@@ -287,10 +291,12 @@ fun Route.group() =
 
             val newNameClient = call.receive<forString>()
 
-            val groupWitnNewName = Group(newNameClient.name,oldSubgroup)
-            groupsRepo.update(id,groupWitnNewName)
-            call.respondText("Subgroup add correctly",
-                status = HttpStatusCode.Created)
+            val groupWitnNewName = Group(newNameClient.name, oldSubgroup)
+            groupsRepo.update(id, groupWitnNewName)
+            call.respondText(
+                "Subgroup add correctly",
+                status = HttpStatusCode.Created
+            )
         }
 
         //Выгрузка подгрупп группы
@@ -323,10 +329,12 @@ fun Route.group() =
             val newSubgroupClient = call.receive<forString>()
             val newSubgroup = oldSubgroup + newSubgroupClient.name
 
-            val groupWitnNewSubgroup = Group(oldNameGroup,newSubgroup)
-            groupsRepo.update(id,groupWitnNewSubgroup)
-            call.respondText("Subgroup add correctly",
-            status = HttpStatusCode.Created)
+            val groupWitnNewSubgroup = Group(oldNameGroup, newSubgroup)
+            groupsRepo.update(id, groupWitnNewSubgroup)
+            call.respondText(
+                "Subgroup add correctly",
+                status = HttpStatusCode.Created
+            )
         }
 
         //Удаление подгруппы
@@ -347,9 +355,11 @@ fun Route.group() =
             val newGroup = oldSubgroup.minus(oldSubgroup.elementAt(indexDeleteSubgroupClient))
 
             val groupWithoutSubgroup = Group(oldNameGroup, newGroup)
-            groupsRepo.update(id,groupWithoutSubgroup)
-            call.respondText("Subgroup remove correctly",
-                status = HttpStatusCode.Created)
+            groupsRepo.update(id, groupWithoutSubgroup)
+            call.respondText(
+                "Subgroup remove correctly",
+                status = HttpStatusCode.Created
+            )
         }
 
         //Выгрузка ВСЕХ подгрупп

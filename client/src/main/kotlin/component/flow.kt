@@ -3,31 +3,33 @@ package component
 import kotlinext.js.jso
 import kotlinx.html.INPUT
 import kotlinx.html.SELECT
-import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import kotlinx.html.onFocusOut
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.w3c.dom.events.Event
-import react.*
+import react.Props
 import react.dom.*
+import react.fc
 import react.query.useMutation
 import react.query.useQuery
 import react.query.useQueryClient
 import react.router.dom.Link
 import react.router.useParams
-import ru.nikxor.edu.server.model.*
+import react.useRef
+import react.useState
 import ru.nikxor.edu.server.model.Config.Companion.flowsPath
 import ru.nikxor.edu.server.model.Config.Companion.groupsPath
+import ru.nikxor.edu.server.model.Flow
+import ru.nikxor.edu.server.model.Group
+import ru.nikxor.edu.server.model.Item
+import ru.nikxor.edu.server.model.forString
 import wrappers.QueryError
 import wrappers.axios
 import wrappers.fetchText
 import kotlin.js.json
 
-external interface FlowProps: Props {
-//    var typeFlow: String
+external interface FlowProps : Props {
+    //    var typeFlow: String
     var Flow: Item<Flow>
     var allGroups: List<Item<Group>>
     var participants: List<String>
@@ -51,17 +53,17 @@ fun fcFlow() = fc("Flow") { props: FlowProps ->
     val (state, setState) = useState("")
 
     h3 {
-        + props.Flow.elem.name
+        +props.Flow.elem.name
     }
     ol("rectangle") {
         props.participants.mapIndexed { index, it ->
             li {
                 Link {
                     attrs.to = it.toString()
-                    + "$it"
+                    +"$it"
                 }
                 button {
-                    + "X"
+                    +"X"
                     attrs.onClickFunction = {
                         props.deleteParticipants(index)
                     }
@@ -70,7 +72,34 @@ fun fcFlow() = fc("Flow") { props: FlowProps ->
         }
     }
 
-        if ( props.Flow.elem.type == "Lecture" ) {
+    if (props.Flow.elem.type == "Lecture") {
+        span {
+            p("enterText") {
+                +"Имя группы:"
+            }
+            select("enterTextInput") {
+                ref = selectRef
+
+                props.groupsForAdded.map {
+                    option {
+                        +it
+                        attrs.value = it
+                    }
+                }
+            }
+            button {
+                +"Add participant"
+                attrs.onClickFunction = {
+                    val select = selectRef.current.unsafeCast<MySelectFlow>()
+                    val name = select.value
+                    if (name != "") {
+                        props.addParticipants(name)
+                    }
+                }
+            }
+        }
+    } else if (props.Flow.elem.type == "Practice") {
+        if (props.participants.size < 1) {
             span {
                 p("enterText") {
                     +"Имя группы:"
@@ -80,8 +109,8 @@ fun fcFlow() = fc("Flow") { props: FlowProps ->
 
                     props.groupsForAdded.map {
                         option {
-                            +it
-                            attrs.value = it
+                            +"$it"
+                            attrs.value = "$it"
                         }
                     }
                 }
@@ -96,86 +125,59 @@ fun fcFlow() = fc("Flow") { props: FlowProps ->
                     }
                 }
             }
-        } else if (props.Flow.elem.type == "Practice") {
-            if (props.participants.size < 1) {
-                span {
-                    p("enterText"){
-                        +"Имя группы:"
-                    }
-                    select("enterTextInput") {
-                        ref = selectRef
-
-                        props.groupsForAdded.map {
-                            option {
-                                +"$it"
-                                attrs.value = "$it"
-                            }
-                        }
-                    }
-                    button {
-                        +"Add participant"
-                        attrs.onClickFunction = {
-                            val select = selectRef.current.unsafeCast<MySelectFlow>()
-                            val name = select.value
-                            if (name != "") {
-                                props.addParticipants(name)
-                            }
-                        }
-                    }
-                }
-            }
-        } else if (props.Flow.elem.type == "Lab") {
-            if (props.participants.size < 1) {
-
-                select("enterTextInput") {
-                    ref = selectRef
-                    props.allGroups.map {
-                        option {
-
-                            +it.elem.name
-                            attrs.value = it.elem.name
-                            attrs.onFocusOut = it.elem.name
-                        }
-                    }
-                }
-
-                button {
-                    +"Select"
-                    attrs.onClickFunction = {
-                        val select = selectRef.current.unsafeCast<MySelect>()
-                        val name = select.value
-                        setState(name)
-                    }
-                    }
-                var currentSubgroup: Set<String> = emptySet()
-                props.allGroups.forEach {
-                    if (it.elem.name == state) {
-                        currentSubgroup = it.elem.subgroups
-                    }
-                }
-                select("enterTextInput") {
-                    ref = selectRef1
-
-                    currentSubgroup.map {
-                        option {
-                            +it
-                            attrs.value = it
-                        }
-                    }
-                }
-                button {
-                    +"Add participant"
-                    attrs.onClickFunction = {
-                        val select = selectRef1.current.unsafeCast<MySelectFlow>()
-                        val name = select.value
-                        if (name != "") {
-                            props.addParticipants(name)
-                        }
-                    }
-                }
-            }
-
         }
+    } else if (props.Flow.elem.type == "Lab") {
+        if (props.participants.size < 1) {
+
+            select("enterTextInput") {
+                ref = selectRef
+                props.allGroups.map {
+                    option {
+
+                        +it.elem.name
+                        attrs.value = it.elem.name
+                        attrs.onFocusOut = it.elem.name
+                    }
+                }
+            }
+
+            button {
+                +"Select"
+                attrs.onClickFunction = {
+                    val select = selectRef.current.unsafeCast<MySelect>()
+                    val name = select.value
+                    setState(name)
+                }
+            }
+            var currentSubgroup: Set<String> = emptySet()
+            props.allGroups.forEach {
+                if (it.elem.name == state) {
+                    currentSubgroup = it.elem.subgroups
+                }
+            }
+            select("enterTextInput") {
+                ref = selectRef1
+
+                currentSubgroup.map {
+                    option {
+                        +it
+                        attrs.value = it
+                    }
+                }
+            }
+            button {
+                +"Add participant"
+                attrs.onClickFunction = {
+                    val select = selectRef1.current.unsafeCast<MySelectFlow>()
+                    val name = select.value
+                    if (name != "") {
+                        props.addParticipants(name)
+                    }
+                }
+            }
+        }
+
+    }
 
     span {
         p {
@@ -259,13 +261,12 @@ fun fcContainerFlow() = fc("QueryFlow") { _: Props ->
         val qq: forString
     )
 
-    val updateNameFlowMutation = useMutation<Any,Any,MutationData,Any>(
-        {
-            newNameFlow ->
-            axios<String>( jso {
+    val updateNameFlowMutation = useMutation<Any, Any, MutationData, Any>(
+        { newNameFlow ->
+            axios<String>(jso {
                 url = "$flowsPath/${FlowID}/name"
                 method = "Put"
-                headers = json (
+                headers = json(
                     "Content-Type" to "application/json"
                 )
                 data = JSON.stringify(newNameFlow.qq)
@@ -279,8 +280,7 @@ fun fcContainerFlow() = fc("QueryFlow") { _: Props ->
     )
 
 
-
-    val addParticipantMutation = useMutation<Any,Any,MutationData,Any>(
+    val addParticipantMutation = useMutation<Any, Any, MutationData, Any>(
         { newPartClient ->
             axios<String>(jso {
                 url = flowsPath + FlowID
@@ -299,9 +299,9 @@ fun fcContainerFlow() = fc("QueryFlow") { _: Props ->
     )
 
 
-    val deleteParticipantMutation = useMutation<Any,Any,Any,Any>(
+    val deleteParticipantMutation = useMutation<Any, Any, Any, Any>(
         { i ->
-            axios<String>( jso {
+            axios<String>(jso {
                 url = "$flowsPath/${FlowID}/delete"
                 method = "Put"
                 headers = json("Content-Type" to "application/json")
@@ -318,7 +318,7 @@ fun fcContainerFlow() = fc("QueryFlow") { _: Props ->
 
 
     if (query.isLoading or querySubGroup.isLoading or queryObject.isLoading or queryGroup.isLoading or queryAllGroups.isLoading) div { +"Loading" }
-    else if (query.isError or queryObject.isError or queryGroup.isError or querySubGroup.isError or queryAllGroups.isError) div {+"Error"}
+    else if (query.isError or queryObject.isError or queryGroup.isError or querySubGroup.isError or queryAllGroups.isError) div { +"Error" }
     else {
         val items: List<String> = Json.decodeFromString(query.data ?: "")
         val groupMembers: List<String> = Json.decodeFromString(queryGroup.data ?: "")
@@ -335,10 +335,10 @@ fun fcContainerFlow() = fc("QueryFlow") { _: Props ->
                 deleteParticipantMutation.mutate(index, null)
             }
             attrs.addParticipants = { n ->
-                addParticipantMutation.mutate(MutationData(forString(n)),null)
+                addParticipantMutation.mutate(MutationData(forString(n)), null)
             }
             attrs.updateFlowName = { n ->
-                updateNameFlowMutation.mutate(MutationData(forString(n)),null)
+                updateNameFlowMutation.mutate(MutationData(forString(n)), null)
             }
         }
     }

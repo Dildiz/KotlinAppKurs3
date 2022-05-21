@@ -1,8 +1,6 @@
 package component
 
 import kotlinext.js.jso
-import kotlinx.css.h3
-import kotlinx.html.A
 import kotlinx.html.INPUT
 import kotlinx.html.SELECT
 import kotlinx.html.js.onClickFunction
@@ -17,43 +15,40 @@ import react.query.useMutation
 import react.query.useQuery
 import react.query.useQueryClient
 import react.router.dom.Link
-import react.router.useParams
 import react.useRef
 import ru.nikxor.edu.server.model.Config
 import ru.nikxor.edu.server.model.Config.Companion.flowsPath
 import ru.nikxor.edu.server.model.Flow
-import ru.nikxor.edu.server.model.Group
 import ru.nikxor.edu.server.model.Item
-import wrappers.AxiosResponse
 import wrappers.QueryError
 import wrappers.axios
 import wrappers.fetchText
 import kotlin.js.json
 
-external interface FlowListProps: Props {
+external interface FlowListProps : Props {
     var flows: List<Item<Flow>>
     var deleteFlow: (Int) -> Unit
-    var addFlow: (String,String) -> Unit
+    var addFlow: (String, String) -> Unit
 }
 
 interface MySelect {
-    val value:String
+    val value: String
 }
 
-fun fcFlowList() = fc("FlowList") {props: FlowListProps ->
+fun fcFlowList() = fc("FlowList") { props: FlowListProps ->
     val nameFlowRef = useRef<INPUT>()
     val selectRef = useRef<SELECT>()
 
-    val forSelect = listOf<String>("Lecture","Practice", "Lab")
+    val forSelect = listOf<String>("Lecture", "Practice", "Lab")
 
-    h3 { + "Flows "}
+    h3 { +"Flows " }
     ol("rectangle") {
-        props.flows.mapIndexed { index,flowItem ->
+        props.flows.mapIndexed { index, flowItem ->
             li {
                 val flow = flowItem.elem.name
                 Link {
                     attrs.to = flowItem.uuid
-                    + flow
+                    +flow
                 }
                 button {
                     +"X"
@@ -66,7 +61,7 @@ fun fcFlowList() = fc("FlowList") {props: FlowListProps ->
     }
     span {
         p("enterText") {
-            + "Имя потока:"
+            +"Имя потока:"
             input {
                 ref = nameFlowRef
             }
@@ -74,17 +69,17 @@ fun fcFlowList() = fc("FlowList") {props: FlowListProps ->
         select("enterTextInput") {
             ref = selectRef
 
-                forSelect.forEach {
-                    option {
-                        +it
-                        attrs.value = it
-                    }
+            forSelect.forEach {
+                option {
+                    +it
+                    attrs.value = it
                 }
+            }
         }
         button {
-            + "Add flow"
+            +"Add flow"
             attrs.onClickFunction = {
-                val select  = selectRef.current.unsafeCast<MySelect>()
+                val select = selectRef.current.unsafeCast<MySelect>()
                 val type = select.value
                 nameFlowRef.current?.value?.let { nameFlow ->
                     if (nameFlow != "") {
@@ -101,15 +96,14 @@ class FlowClient(
     override val elem: Flow,
     override val etag: Long,
     override val uuid: String
-):Item<Flow>
+) : Item<Flow>
 
 
-
-fun fcContainerFlowList() = fc("QueryFlowList") { _:Props ->
+fun fcContainerFlowList() = fc("QueryFlowList") { _: Props ->
     val queryClient = useQueryClient()
 
 
-    val query = useQuery<Any, QueryError, String , Any>(
+    val query = useQuery<Any, QueryError, String, Any>(
         "FlowList1", {
             fetchText(
                 url = flowsPath,
@@ -120,7 +114,7 @@ fun fcContainerFlowList() = fc("QueryFlowList") { _:Props ->
         }
     )
 
-    val deleteFlowMutation = useMutation<Any,Any,Any,Any>(
+    val deleteFlowMutation = useMutation<Any, Any, Any, Any>(
         { FlowItem: Item<Flow> ->
             axios<String>(jso {
                 url = flowsPath + FlowItem.uuid
@@ -134,13 +128,12 @@ fun fcContainerFlowList() = fc("QueryFlowList") { _:Props ->
         }
     )
 
-    val addFlowMutation = useMutation<Any,Any,Any,Any>(
-        {
-                flow: Flow->
-            axios<String>( jso {
+    val addFlowMutation = useMutation<Any, Any, Any, Any>(
+        { flow: Flow ->
+            axios<String>(jso {
                 url = Config.flowsPath
                 method = "Post"
-                headers = json (
+                headers = json(
                     "Content-Type" to "application/json"
                 )
                 data = Json.encodeToString(flow)
@@ -153,8 +146,8 @@ fun fcContainerFlowList() = fc("QueryFlowList") { _:Props ->
         }
     )
 
-    if (query.isLoading) div { +"Loading.."}
-    else if (query.isError) div {+ "Error!"}
+    if (query.isLoading) div { +"Loading.." }
+    else if (query.isError) div { +"Error!" }
     else {
         val items: List<FlowClient> = Json.decodeFromString(query.data ?: "")
         child(fcFlowList()) {
@@ -162,8 +155,8 @@ fun fcContainerFlowList() = fc("QueryFlowList") { _:Props ->
             attrs.deleteFlow = {
                 deleteFlowMutation.mutate(items[it], null)
             }
-            attrs.addFlow = { n,t ->
-                addFlowMutation.mutate(Flow(n,type = t ),null)
+            attrs.addFlow = { n, t ->
+                addFlowMutation.mutate(Flow(n, type = t), null)
 
             }
         }

@@ -5,12 +5,11 @@ import io.ktor.http.*
 import io.ktor.request.*
 import io.ktor.response.*
 import io.ktor.routing.*
-import ru.nikxor.edu.server.model.*
 import ru.nikxor.edu.server.model.Config.Companion.flowsPath
-import ru.nikxor.edu.server.model.Config.Companion.groupsPath
+import ru.nikxor.edu.server.model.Flow
+import ru.nikxor.edu.server.model.forString
 import ru.nikxor.edu.server.repo.flowsRepo
 import ru.nikxor.edu.server.repo.groupsRepo
-import kotlin.text.get
 
 fun Route.flow() =
     route(flowsPath) {
@@ -59,10 +58,12 @@ fun Route.flow() =
 
             val newNameClient = call.receive<forString>()
 
-            val flowWitnNewName = Flow(newNameClient.name,oldType,oldPart)
-            flowsRepo.update(id,flowWitnNewName)
-            call.respondText("Name update correctly",
-                status = HttpStatusCode.Created)
+            val flowWitnNewName = Flow(newNameClient.name, oldType, oldPart)
+            flowsRepo.update(id, flowWitnNewName)
+            call.respondText(
+                "Name update correctly",
+                status = HttpStatusCode.Created
+            )
         }
 
         //Выгрузка групп и подгрупп в потоке
@@ -109,11 +110,13 @@ fun Route.flow() =
             val newPartClient = call.receive<forString>()
             val newPart = oldPart + newPartClient.name
 
-            val flowWithNewPart = Flow(oldNameFlow,oldType,newPart)
+            val flowWithNewPart = Flow(oldNameFlow, oldType, newPart)
 
-            flowsRepo.update(id,flowWithNewPart)
-            call.respondText("Participants add correctly",
-            status = HttpStatusCode.Accepted)
+            flowsRepo.update(id, flowWithNewPart)
+            call.respondText(
+                "Participants add correctly",
+                status = HttpStatusCode.Accepted
+            )
         }
 
         //Удаление членов потока
@@ -136,8 +139,10 @@ fun Route.flow() =
             val flowWithoutPart = Flow(oldNameFlow, oldType, newFlow)
 
             flowsRepo.update(id, flowWithoutPart)
-            call.respondText("Part remove correctly",
-                status = HttpStatusCode.Created)
+            call.respondText(
+                "Part remove correctly",
+                status = HttpStatusCode.Created
+            )
         }
 
         //Выгрузка подгрупп для селекта
@@ -170,10 +175,10 @@ fun Route.flow() =
                 "No flow with id $id",
                 status = HttpStatusCode.NotFound
             )
-            val qe:Set<String> = FlowItems.elem.participants
+            val qe: Set<String> = FlowItems.elem.participants
             var ee: Set<String> = emptySet()
             groupsRepo.findAll().forEach {
-                ee =  ee + it.elem.name
+                ee = ee + it.elem.name
             }
             val qq = ee - qe
             call.respond(qq)

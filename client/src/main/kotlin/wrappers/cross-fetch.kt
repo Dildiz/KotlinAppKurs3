@@ -1,7 +1,6 @@
 package wrappers
 
 import kotlinext.js.jso
-import ru.nikxor.edu.server.model.Config
 import kotlin.js.Promise
 
 @JsModule("cross-fetch")

@@ -1,9 +1,6 @@
 package component
 
-import csstype.FontSize
 import kotlinext.js.jso
-import kotlinx.css.fontSize
-import kotlinx.css.listStyleType
 import kotlinx.html.INPUT
 import kotlinx.html.js.onClickFunction
 import kotlinx.serialization.Serializable
@@ -17,19 +14,16 @@ import react.query.useMutation
 import react.query.useQuery
 import react.query.useQueryClient
 import react.router.dom.Link
-import react.router.useParams
 import react.useRef
-import ru.nikxor.edu.server.model.Config
 import ru.nikxor.edu.server.model.Config.Companion.groupsPath
-import ru.nikxor.edu.server.model.Item
-import ru.nikxor.edu.server.model.Config.Companion.groupsURL
 import ru.nikxor.edu.server.model.Group
-import styled.css
-import styled.styledOl
-import wrappers.*
+import ru.nikxor.edu.server.model.Item
+import wrappers.QueryError
+import wrappers.axios
+import wrappers.fetchText
 import kotlin.js.json
 
-external interface GroupListProps: Props {
+external interface GroupListProps : Props {
     var groups: List<Item<Group>>
     var deleteGroup: (Int) -> Unit
     var addGroup: (String) -> Unit
@@ -58,24 +52,24 @@ fun fcGroupList() = fc("GroupList") { props: GroupListProps ->
             }
         }
     }
-        span {
-            p("enterText") {
-                +"Имя группы:"
-                input {
-                    ref = nameGroupRef
-                }
+    span {
+        p("enterText") {
+            +"Имя группы:"
+            input {
+                ref = nameGroupRef
             }
-            button {
-                +"Add group"
-                attrs.onClickFunction = {
-                    nameGroupRef.current?.value?.let { nameGroup ->
-                        if (nameGroup != "") {
-                            props.addGroup(nameGroup)
-                        }
+        }
+        button {
+            +"Add group"
+            attrs.onClickFunction = {
+                nameGroupRef.current?.value?.let { nameGroup ->
+                    if (nameGroup != "") {
+                        props.addGroup(nameGroup)
                     }
                 }
             }
         }
+    }
 
 
 }
@@ -85,12 +79,12 @@ class GroupClient(
     override val elem: Group,
     override val etag: Long,
     override val uuid: String
-):Item<Group>
+) : Item<Group>
 
-fun fcContainerGroupList() = fc("QueryGroupList") { _:Props ->
+fun fcContainerGroupList() = fc("QueryGroupList") { _: Props ->
     val queryClient = useQueryClient()
 
-    val query = useQuery<Any, QueryError, String , Any>(
+    val query = useQuery<Any, QueryError, String, Any>(
         "GroupList", {
             fetchText(
                 url = groupsPath,
@@ -115,15 +109,14 @@ fun fcContainerGroupList() = fc("QueryGroupList") { _:Props ->
         }
     )
 
-    val addGroupMutation = useMutation<Any,Any,Any,Any>(
-        {
-            group: Group ->
-            axios<String>( jso {
-                url =  groupsPath
+    val addGroupMutation = useMutation<Any, Any, Any, Any>(
+        { group: Group ->
+            axios<String>(jso {
+                url = groupsPath
                 method = "Post"
-                headers = json (
+                headers = json(
                     "Content-Type" to "application/json"
-                        )
+                )
                 data = Json.encodeToString(group)
             })
         },
@@ -134,7 +127,7 @@ fun fcContainerGroupList() = fc("QueryGroupList") { _:Props ->
         }
     )
 
-    if (query.isLoading) div { +"Loading.."}
+    if (query.isLoading) div { +"Loading.." }
     else {
         val items: List<GroupClient> = Json.decodeFromString(query.data ?: "")
         child(fcGroupList()) {
@@ -143,7 +136,7 @@ fun fcContainerGroupList() = fc("QueryGroupList") { _:Props ->
                 deleteGroupMutation.mutate(items[it], null)
             }
             attrs.addGroup = { n ->
-                addGroupMutation.mutate(Group(n),null)
+                addGroupMutation.mutate(Group(n), null)
             }
         }
     }

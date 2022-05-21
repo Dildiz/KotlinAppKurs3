@@ -21,7 +21,7 @@ import wrappers.axios
 import wrappers.fetchText
 import kotlin.js.json
 
-external interface SubgroupProps: Props {
+external interface SubgroupProps : Props {
     var Flows: Set<String>
     var name: String
     var deleteFlow: (String) -> Unit
@@ -40,7 +40,7 @@ fun fcSubgroup() = fc("Subgroup") { props: SubgroupProps ->
             li {
                 +it1
                 button {
-                    + "X"
+                    +"X"
                     attrs.onClickFunction = {
                         props.deleteFlow(it1)
                     }
@@ -52,14 +52,14 @@ fun fcSubgroup() = fc("Subgroup") { props: SubgroupProps ->
         ref = selectRef
 
         props.FlowsForSubgroup.map {
-            option{
+            option {
                 +"$it"
                 attrs.value = "$it"
             }
         }
     }
     button {
-        + "Add flow"
+        +"Add flow"
         attrs.onClickFunction = {
             val select = selectRef.current.unsafeCast<MySelect>()
             val name = select.value
@@ -71,13 +71,13 @@ fun fcSubgroup() = fc("Subgroup") { props: SubgroupProps ->
 
 }
 
-fun fcContainerSubgroup() = fc("QuerySubgroup") { _:Props ->
+fun fcContainerSubgroup() = fc("QuerySubgroup") { _: Props ->
     val queryClient = useQueryClient()
     val params = useParams()
     val GroupID = params["groupId"] ?: "Error"
     val SubgroupName = params["subgroupname"] ?: "Error"
 
-    val queryFlows = useQuery<Any,QueryError, String,Any>(
+    val queryFlows = useQuery<Any, QueryError, String, Any>(
         "FlowsInSubgroup", {
             fetchText(
                 url = "$groupsPath/$GroupID/$SubgroupName/flows",
@@ -88,7 +88,7 @@ fun fcContainerSubgroup() = fc("QuerySubgroup") { _:Props ->
         }
     )
 
-    val queryFlowsSelect = useQuery<Any,QueryError, String,Any>(
+    val queryFlowsSelect = useQuery<Any, QueryError, String, Any>(
         "FlowsInSubgroupSelect", {
             fetchText(
                 url = "$groupsPath/$GroupID/$SubgroupName/Select",
@@ -104,7 +104,7 @@ fun fcContainerSubgroup() = fc("QuerySubgroup") { _:Props ->
     )
 
 
-    val addSubgroupInFlowMutation = useMutation<Any,Any,MutationData,Any>(
+    val addSubgroupInFlowMutation = useMutation<Any, Any, MutationData, Any>(
         { newSubroupInFlow ->
             axios<String>(jso {
                 url = "$groupsPath/${GroupID}/${SubgroupName}/flowInSubgroup"
@@ -121,7 +121,7 @@ fun fcContainerSubgroup() = fc("QuerySubgroup") { _:Props ->
         }
     )
 
-    val deleteSubgroupInFlowMutation = useMutation<Any,Any,MutationData,Any>(
+    val deleteSubgroupInFlowMutation = useMutation<Any, Any, MutationData, Any>(
         { i ->
             axios<String>(jso {
                 url = "$groupsPath/${GroupID}/${SubgroupName}/flowInSubgroup/delete"
@@ -139,19 +139,19 @@ fun fcContainerSubgroup() = fc("QuerySubgroup") { _:Props ->
     )
 
 
-    if (queryFlows.isLoading or queryFlowsSelect.isLoading) div { +"Loading.."}
-    else if (queryFlows.isError or queryFlowsSelect.isError) div { +"Error!!"}
+    if (queryFlows.isLoading or queryFlowsSelect.isLoading) div { +"Loading.." }
+    else if (queryFlows.isError or queryFlowsSelect.isError) div { +"Error!!" }
     else {
         val items: Set<String> = Json.decodeFromString(queryFlows.data ?: "")
         val itemsSelect: Set<String> = Json.decodeFromString(queryFlowsSelect.data ?: "")
         child(fcSubgroup()) {
             attrs.Flows = items
             attrs.FlowsForSubgroup = itemsSelect
-            attrs.addFlowInSubgroup = { n->
+            attrs.addFlowInSubgroup = { n ->
                 addSubgroupInFlowMutation.mutate(MutationData(forString(n)), null)
             }
-            attrs.deleteFlow = { n->
-                deleteSubgroupInFlowMutation.mutate(MutationData(forString(n)),null)
+            attrs.deleteFlow = { n ->
+                deleteSubgroupInFlowMutation.mutate(MutationData(forString(n)), null)
             }
         }
     }

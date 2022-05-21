@@ -29,7 +29,6 @@ val styles = CssBuilder().apply {
 }
 
 
-
 fun main() {
     render(document.getElementById("root")!!) {
         HashRouter {
